@@ -1,4 +1,3 @@
-# Import necessary libraries 
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -10,6 +9,9 @@ from sklearn.preprocessing import StandardScaler
 from imblearn.over_sampling import SMOTE
 import numpy as np
 import streamlit as st
+
+# Set page title and icon
+st.set_page_config(page_title="Breast Cancer Prediction App",page_icon="🩺",)
 
 # Cache for loading and preprocessing the dataset
 @st.cache_data
@@ -101,51 +103,26 @@ default_values = {
 # Streamlit Layout
 st.title('Breast Cancer Diagnosis Prediction')
 st.sidebar.title("Navigation")
-page = st.sidebar.radio("Go to", ["Home", "Make Prediction"])
+page = st.sidebar.radio("Go to", ["Make Prediction", "Overview"])
 
-# Home Page: Overview and Data Visualizations
-if page == "Home":
-    st.subheader("Basic Overview of the Dataset")
-    st.write(data.head())
-    st.write(f"Shape of the dataset: {data.shape}")
-    
-    # Pie chart for the distribution of diagnosis
-    diagnosis_counts = data['Diagnosis'].value_counts()
-    st.subheader("Distribution of Breast Cancer Diagnosis")
-    fig, ax = plt.subplots()
-    ax.pie(diagnosis_counts, labels=['Benign (0)', 'Malignant (1)'], autopct='%1.1f%%', startangle=90, colors=['skyblue', 'salmon'])
-    ax.axis('equal')
-    st.pyplot(fig)
-    
-    # Correlation Heatmap
-    st.subheader("Feature Correlation Heatmap")
-    fig, ax = plt.subplots(figsize=(20, 12))
-    sns.heatmap(data.corr(), annot=True, fmt='.0%', cmap='coolwarm', ax=ax)
-    st.pyplot(fig)
-    
-    # Confusion Matrix for Best AdaBoost Model
-    st.subheader("Confusion Matrix for Best AdaBoost Classifier")
-    y_pred_best = best_model.predict(X_test)
-    conf_matrix_best = confusion_matrix(y_test, y_pred_best)
-    fig, ax = plt.subplots(figsize=(6, 4))
-    sns.heatmap(conf_matrix_best, annot=True, fmt='d', cmap='Blues', xticklabels=['Benign', 'Malignant'], yticklabels=['Benign', 'Malignant'])
-    ax.set_xlabel('Predicted')
-    ax.set_ylabel('Actual')
-    ax.set_title('Confusion Matrix (Best Model)')
-    st.pyplot(fig)
+
 
 # Make Prediction Page: User Input for Prediction
-# Make Prediction Page: User Input for Prediction
-elif page == "Make Prediction":
+if page == "Make Prediction":
     st.subheader("Make Predictions")
-    st.write("Enter the values for the features to predict whether the tumor is MALIGNANT or BENIGN.")
+    st.write("Use the sliders to enter the values for the features to predict whether the tumor is MALIGNANT or BENIGN.")
     
-    # Create input fields with default malignant values
+    # Create input fields with min and max values dynamically
     user_inputs = {}
     for feature in data.columns[:-1]:
-        user_inputs[feature] = st.number_input(
+        min_value = float(data[feature].min())
+        max_value = float(data[feature].max())
+        user_inputs[feature] = st.slider(
             f"Enter value for {feature}",
-            value=default_values.get(feature, 0.0)  # Use default malignant value
+            min_value=min_value, 
+            max_value=max_value, 
+            value=default_values.get(feature, 0.0),
+            step=(max_value - min_value) / 100  # Dynamically set the step size
         )
     
     if st.button("Make Prediction"):
@@ -176,3 +153,35 @@ elif page == "Make Prediction":
                 </style>
                 """, unsafe_allow_html=True
             )
+
+# Home Page: Overview and Data Visualizations
+elif page == "Overview":
+    st.subheader("Basic Overview of the Dataset")
+    st.write(data.head())
+    st.write(f"Shape of the dataset: {data.shape}")
+    
+    # Pie chart for the distribution of diagnosis
+    diagnosis_counts = data['Diagnosis'].value_counts()
+    st.subheader("Distribution of Breast Cancer Diagnosis")
+    fig, ax = plt.subplots()
+    ax.pie(diagnosis_counts, labels=['Benign (0)', 'Malignant (1)'], autopct='%1.1f%%', startangle=90, colors=['skyblue', 'salmon'])
+    ax.axis('equal')
+    st.pyplot(fig)
+    
+    # Correlation Heatmap
+    st.subheader("Feature Correlation Heatmap")
+    fig, ax = plt.subplots(figsize=(20, 12))
+    sns.heatmap(data.corr(), annot=True, fmt='.0%', cmap='coolwarm', ax=ax)
+    st.pyplot(fig)
+    
+    # Confusion Matrix for Best AdaBoost Model
+    st.subheader("Confusion Matrix for Best AdaBoost Classifier")
+    y_pred_best = best_model.predict(X_test)
+    conf_matrix_best = confusion_matrix(y_test, y_pred_best)
+    fig, ax = plt.subplots(figsize=(6, 4))
+    sns.heatmap(conf_matrix_best, annot=True, fmt='d', cmap='Blues', xticklabels=['Benign', 'Malignant'], yticklabels=['Benign', 'Malignant'])
+    ax.set_xlabel('Predicted')
+    ax.set_ylabel('Actual')
+    ax.set_title('Confusion Matrix (Best Model)')
+    st.pyplot(fig)
+
